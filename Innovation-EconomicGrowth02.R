@@ -21,6 +21,14 @@ library(reshape)
 library(ggplot2)
 #install.packages("GGally")
 library(GGally)
+library(car)
+library(gplots)
+library(alr4)
+library(plm)
+install.packages('apsrtable')
+library(apsrtable)
+library(corrplot)
+library(lmtest)
 
 # point to the files
 rawData <- paste0(RawData,"/econ.csv")
@@ -70,27 +78,18 @@ ggplot(data.final1, aes(x = patent.res , y = GDP, colour = income.group, shape=i
   geom_point() + 
   geom_smooth(method=lm, se=FALSE, fullrange=TRUE)
 
-
-library(car)
 scatterplot(GDP ~ year|income.group, boxplots=FALSE, smooth=TRUE, reg.line=FALSE, data=data.final1)
 
 ## Fixed-Effects model 
-
-#ggplot(data.final, aes(x = year , y = GDP, colour = income.group)) +
-#  geom_point()
-library(gplots)
-#plotmeans(GDP ~ income.group, main="Heterogeineityacross countries", data=data.final)
 plotmeans(GDP ~ year, main="Heterogeineity across years", barcol="red", data=data.final1)
 
 ## OLS 
-
 OLS <- lm(formula = GDP  ~ patent.res + patent.non + fixed.broadband, data = data.final)
 summary(OLS)
 
 OLS1 <- lm(formula = GDP  ~ patent.res + patent.non + fixed.broadband, data = data.final1)
 summary(OLS1)
 
-library(alr4)
 residualPlots(OLS)
 residualPlots(OLS1)
 par(mfrow=c(2,2))
@@ -99,7 +98,6 @@ plot(OLS1)
 
 ##re run OLS 
 # OLS 
-
 OLS <- lm(formula = GDP  ~ patent.res + patent.non + fixed.broadband, data = data.final)
 summary(OLS)
 #residualPlots(OLS)
@@ -112,18 +110,13 @@ plot(data.final1$patent.res, data.final1$GDP, pch=19, xlab="x1", ylab="y")
 abline(lm(data.final1$GDP~data.final1$patent.res),lwd=3, col="red")
 
 ## Fixed effects using Least squares dummy variable model
-
 least.squares.dum <-lm(GDP  ~ patent.res + patent.non + fixed.broadband 
                + factor(country.name) -1, data=data.final1)
 summary(least.squares.dum)
 
-install.packages('apsrtable')
-library(apsrtable)
 apsrtable(OLS,least.squares.dum, model.names= c("OLS", "OLS_DUM"))
 
 ## Fixed effects: Identity-specific intercepts
-#install.packages("plm")
-library(plm)
 fixed <-plm(GDP  ~ patent.res + patent.non + fixed.broadband, data=data.final1, index=c("country.name", "year"), model="within")
 summary(fixed)
 
@@ -138,7 +131,6 @@ fixef(fixed)
 # Testing for fixed effects, null: OLS better than fixed
 pFtest(fixed, OLS)
 
-
 ## RANDOM EFFECTS 
 
 random <-plm(GDP  ~ patent.res + patent.non + fixed.broadband
@@ -146,8 +138,6 @@ random <-plm(GDP  ~ patent.res + patent.non + fixed.broadband
 summary(random)
 phtest(fixed, random)
 
-
-library(corrplot)
 corrplot(cor(data.final), method='number')
 # select only numberic columns
 numcols <- sapply(data.final, is.numeric)
@@ -167,7 +157,6 @@ adf.test(Panel.set$GDP, k=2)
 pbgtest(fixed)
 
 #test homoskedasticity
-library(lmtest)
 bptest(GDP  ~ patent.res + patent.non + fixed.broadband + factor(country.name), data = data.final1, studentize=F)
 
 # fix serial correlation and homoskedasticity in fixed effects model 
