@@ -28,6 +28,7 @@ rawData <- data.table(read.csv(rawData, sep = ',', stringsAsFactors = F))
 length(unique(rawData$country.name))
 rawData$X <- NULL
 
+# merge fixbroadband variable to the data set 
 fixbroadband <- paste0(RawData,"/fixbroadband.csv")
 fixbroadband <- data.table(read.csv(fixbroadband, sep = ',', stringsAsFactors = F))
 old.names <- colnames(fixbroadband)
@@ -36,7 +37,6 @@ colnames(fixbroadband) <- new.names
 
 category <- paste0(RawData,"/category.xls")
 category.country <- data.table(read_excel(category, sheet = 2))
-
 
 fixbroadband <- handleData(fixbroadband, value = "fixed.broadband")
 fixbroadband$year <- as.integer(as.character(fixbroadband$year))
@@ -47,8 +47,6 @@ data.final <- merge(data.test, category.country, by= "country.code")
 #write.csv(data.final, file = "econdatafinal.csv")
 
 data.final$income.group <- as.factor(data.final$income.group)
-#data.final$income.group <- factor(data.final$income.group, levels=c('0','1','2','3'),
-               #labels=c('Low income','Lower middle income','Upper middle income', 'High income'))
 
 # descriptive analysis 
 str(data.final)
@@ -58,31 +56,25 @@ summary(data.final)
 #correlation plot 
 ggcorr(data.final[, 4:7], label = TRUE, hjust=0.62, size = 5)
 
-#log 
-#data.final[cols] <- lapply(data.final[cols], log)
+# take log of the variable
 data.final1 <- copy(data.final)
 data.final1$patent.res <- log(data.final1$patent.res)
 data.final1$GDP <- log(data.final1$GDP)
 data.final1$patent.non <- log(data.final1$patent.non)
 data.final1$fixed.broadband <- log(data.final1$fixed.broadband)
 
+# now the correlation changes
 ggcorr(data.final1[, 9:12], label = TRUE, hjust=0.56, size = 4)
-
-#ggplot(data.final, aes(x = patent.res , y = GDP, colour = income.group)) +
-  #geom_point() +
-  #facet_wrap( ~ income.group)
 
 ggplot(data.final1, aes(x = patent.res , y = GDP, colour = income.group, shape=income.group)) +
   geom_point() + 
   geom_smooth(method=lm, se=FALSE, fullrange=TRUE)
 
-#coplot(GDP ~ year|country.name, data=data.final) # Lines
-#coplot(GDP ~ year|country.name, type="b", data=data.final)
 
 library(car)
 scatterplot(GDP ~ year|income.group, boxplots=FALSE, smooth=TRUE, reg.line=FALSE, data=data.final1)
 
-# Fixed-Effects model 
+## Fixed-Effects model 
 
 #ggplot(data.final, aes(x = year , y = GDP, colour = income.group)) +
 #  geom_point()
@@ -90,7 +82,7 @@ library(gplots)
 #plotmeans(GDP ~ income.group, main="Heterogeineityacross countries", data=data.final)
 plotmeans(GDP ~ year, main="Heterogeineity across years", barcol="red", data=data.final1)
 
-# OLS 
+## OLS 
 
 OLS <- lm(formula = GDP  ~ patent.res + patent.non + fixed.broadband, data = data.final)
 summary(OLS)
@@ -105,10 +97,7 @@ par(mfrow=c(2,2))
 par(mfrow=c(1,1))
 plot(OLS1)
 
-#log 
-
-
-#re run OLS 
+##re run OLS 
 # OLS 
 
 OLS <- lm(formula = GDP  ~ patent.res + patent.non + fixed.broadband, data = data.final)
@@ -118,39 +107,30 @@ par(mfrow=c(2,2))
 
 plot(OLS)
 
-#yhat <-ols$fitted
 par(mfrow=c(1,1))
 plot(data.final1$patent.res, data.final1$GDP, pch=19, xlab="x1", ylab="y")
 abline(lm(data.final1$GDP~data.final1$patent.res),lwd=3, col="red")
 
-# Fixed effects using Least squares dummy variable model
+## Fixed effects using Least squares dummy variable model
 
 least.squares.dum <-lm(GDP  ~ patent.res + patent.non + fixed.broadband 
                + factor(country.name) -1, data=data.final1)
 summary(least.squares.dum)
 
-#yhat<-fixed.dum$fitted
-#library(car)
-#scatterplot(yhat~data.final$patent.res|data.final$country.name, boxplots=FALSE, xlab="x1", ylab="yhat",smooth=FALSE)
-#abline(lm(Panel$y~Panel$x1),lwd=3, col="red")
-
 install.packages('apsrtable')
 library(apsrtable)
 apsrtable(OLS,least.squares.dum, model.names= c("OLS", "OLS_DUM"))
 
-
-# Fixed effects: nentity-specific intercepts
+## Fixed effects: Identity-specific intercepts
 #install.packages("plm")
 library(plm)
 fixed <-plm(GDP  ~ patent.res + patent.non + fixed.broadband, data=data.final1, index=c("country.name", "year"), model="within")
 summary(fixed)
 
-
 fixed.time<-plm(GDP  ~ patent.res + patent.non + fixed.broadband + factor(year), data=data.final1, index=c("country.name", "year"), model="within")
 summary(fixed.time)
 pFtest(fixed.time, fixed)
 plmtest(fixed, c("time"), type=("bp"))
-
 
 # Display the fixed effects (constants for each country)
 fixef(fixed)
@@ -159,13 +139,12 @@ fixef(fixed)
 pFtest(fixed, OLS)
 
 
-# RANDOM EFFECTS 
+## RANDOM EFFECTS 
 
 random <-plm(GDP  ~ patent.res + patent.non + fixed.broadband
              , data=data.final1, index=c("country.name", "year"), model="random")
 summary(random)
 phtest(fixed, random)
-
 
 
 library(corrplot)
@@ -176,9 +155,6 @@ data.plot <- data.final[,(numcols),with=F]
 data.plot$year <- NULL
 corrplot(cor(na.omit(data.plot)))
 corrplot(cor(na.omit(data.plot), method = 'pie')
-# anything interesting here?
-na.om
-
 
 
 #test stationary yes 
