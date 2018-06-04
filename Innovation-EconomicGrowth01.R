@@ -10,13 +10,13 @@ RData <- paste0(projFld,"/RData")
 Output <- paste0(projFld,"/Output")
 
 # use data.table 
-install.packages("data.table")
+#install.packages("data.table")
 library(data.table)
 # use readxl package
-install.packages("readxl")
+#install.packages("readxl")
 library(readxl)
 # use reshape package
-install.packages("reshape")
+#install.packages("reshape")
 library(reshape)
 
 # point to the files Patent resident
@@ -57,61 +57,4 @@ data.test1 <- merge(data.test, patent.non, by=c("country.code","country.name","y
 
 str(data.test1)
 summary(data.test1)
-#write.csv(data.test1, file = "econ.csv")
-
-
-datalog <- copy(data.test1)
-datalog$patent.res <- log(datalog$patent.res)
-datalog$GDP <- log(datalog$GDP)
-datalog$patent.non <- log(datalog$patent.non)
-coplot(GDP ~ year|country.name, type="l", data=datalog) # Lines
-coplot(GDP ~ year|country.name, type="b", data=datalog) # Points and lines
-par("mar")
-par(mar=c(5.1, 4.1, 4.1, 2.1))
-
-library(car)
-scatterplot(GDP ~ year|country.name, boxplots=FALSE, smooth=TRUE, reg.line=FALSE, data=data.test1)
-
-library(gplots)
-plotmeans(GDP ~ year, main="Heterogeineityacross years", data.test1)
-plotmeans(GDP ~ country.name, main="Heterogeineityacross countries", data=data.test1)
-
-OLSpanel <- lm(formula = GDP  ~ patent.res, data = datalog)
-summary(OLSpanel)
-
-library(alr4)
-residualPlots(OLSpanel)
-par(mfrow=c(1,1))
-plot(OLSpanel)
-
-
-OLSfixed <- lm(formula = GDP  ~ patent.res + factor(country.name) -1, data = datalog)
-summary(OLSfixed)
-
-
-yhat<-OLSfixed$fitted
-
-
-scatterplot(yhat~datalog$patent.res|datalog$country.name, boxplots=FALSE, xlab="patent.res", ylab="yhat",smooth=FALSE)
-abline(lm(data.test1$GDP~data.test1$patent.res),lwd=3, col="red")
-
-
-
-
-install.packages("plm")
-library(plm)
-fixed <-plm(GDP  ~ patent.res + patent.non, data=datalog, index=c("country.name", "year"), model="within")
-summary(fixed)
-
-fixef(fixed)
-pFtest(fixed, OLSpanel)
-
-# random effects
-random <-plm(GDP  ~ patent.res + patent.non, data=datalog, index=c("country.name", "year"), model="random")
-summary(random)
-
-phtest(fixed, random)
-
-library(foreign)
-Panel <-read.dta("http://dss.princeton.edu/training/Panel101.dta")
-require(ggplot2)
+write.csv(data.test1, file = "econ.csv")
